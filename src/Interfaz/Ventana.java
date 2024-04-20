@@ -130,6 +130,7 @@ public class Ventana extends java.awt.Frame {
         altaB.setFont(new java.awt.Font("Arial Black", 0, 14)); // NOI18N
         altaB.setLabel("ALTA");
         altaB.setMinimumSize(new java.awt.Dimension(110, 29));
+        altaB.setPreferredSize(new java.awt.Dimension(110, 29));
         altaB.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 altaBActionPerformed(evt);
@@ -140,6 +141,7 @@ public class Ventana extends java.awt.Frame {
         bajaB.setFont(new java.awt.Font("Arial Black", 0, 14)); // NOI18N
         bajaB.setLabel("BAJA");
         bajaB.setMinimumSize(new java.awt.Dimension(110, 29));
+        bajaB.setPreferredSize(new java.awt.Dimension(110, 29));
         bajaB.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 bajaBActionPerformed(evt);
@@ -150,6 +152,7 @@ public class Ventana extends java.awt.Frame {
         modificarB.setFont(new java.awt.Font("Arial Black", 0, 14)); // NOI18N
         modificarB.setLabel("MODIFICAR");
         modificarB.setMinimumSize(new java.awt.Dimension(110, 29));
+        modificarB.setPreferredSize(new java.awt.Dimension(110, 29));
         modificarB.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 modificarBMouseClicked(evt);
@@ -186,7 +189,6 @@ public class Ventana extends java.awt.Frame {
         listarB.setFont(new java.awt.Font("Arial Black", 1, 14)); // NOI18N
         listarB.setLabel("LISTAR");
         listarB.setMinimumSize(new java.awt.Dimension(110, 29));
-        listarB.setPreferredSize(new java.awt.Dimension(100, 29));
         listarB.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 listarBActionPerformed(evt);
@@ -462,7 +464,7 @@ public class Ventana extends java.awt.Frame {
             repaint();
         } else {
            
-            System.out.println(lista.getItemCount()); 
+            
             Contactos c = a.cargarDatos(nombre);
 
             if (c instanceof Contactos_Amigos) {

@@ -21,16 +21,10 @@ import java.util.*;
 public class Agenda {
 
     contactosDAO cd;
-    HashMap<String, Contactos> map;
+  
 
     public Agenda() {
         cd = new contactosDAO();
-        try {
-            map = new HashMap<>(cd.getContactos());
-        } catch (SQLException ex) {
-            System.out.println(ex);
-        }
-
     }
 
     public void alta(String tipoContacto, String nombre, String numeroTelefono, String email, String cumpleanios, String empresa) throws ParseException, DatosException {
@@ -64,9 +58,13 @@ public class Agenda {
 
         try {
             cd.insert(contacto);
-            map.put(nombre, contacto);
+           
         } catch (SQLException ex) {
-            System.out.println(ex);
+            //error code 1 es PK violated, nombre ya existe
+            if (ex.getErrorCode()== 1){
+            DatosException exRepetido = new DatosException(nombre, true);
+            throw exRepetido; 
+            }
         }
     }
 
@@ -75,6 +73,8 @@ public class Agenda {
             cd.delete(nombre);
             
         } catch (SQLException ex) {
+            //no deberia saltar exception, ya que el usuario no tiene opcion de elegir un nombre que no exista
+            //exception solo seria algun problema con la BBDD al abrir conexion o cerrar conexion
             System.out.println(ex);
         }
 
@@ -90,7 +90,14 @@ public class Agenda {
             throw exExiste;
         }
 
-        Contactos c = (Contactos) map.get(nombre);
+        Contactos c = null;
+        try {
+            c = (Contactos) cd.select(nombre);
+        } catch (SQLException ex) {
+            //el usuario trabaja sobre lista, contacto ya creado en BBDD, no puede ser que el nombre no exista
+            //daria exception si tiene problemas al abrir conexion o cerrar conexion en BBDD
+            System.out.println(ex.getMessage());  
+        }
         c.setCorreo((email.isEmpty() ? c.getCorreo() : email));
         c.setNumero((numeroTelefono.isEmpty() ? c.getNumero() : Integer.valueOf(numeroTelefono)));
 
@@ -106,36 +113,40 @@ public class Agenda {
         try {
             cd.update(c);
         } catch (SQLException ex) {
+            //ya tratamos exception de numero telefono invalidos, email que no cumple pattern en interfaz
+            //No se puede actualizar nombre, solo saltaria exception si hubiera problemas de conexion a BBDD
             System.out.println(ex);
         }
     }
-
+    //metodo interfaz con Scanner
     public String buscar(String nombre) {
         Contactos c = null;
         try {
             c = cd.select(nombre);
         } catch (SQLException ex) {
-            System.out.println(ex);
+            //no usamos este metodo en interfaz grafica
+            System.out.println(ex.getErrorCode());
         }
 
         return c.toString();
 
     }
 
-    //metodo interfaz con Scanner
+    //metodo interfaz con Scanner, no lo usamos trabajando con BBDD
     public String ordenarPorNombre() {
 
-        ArrayList<String> ListaNombres = new ArrayList<>(map.keySet());
+//        ArrayList<String> ListaNombres = new ArrayList<>(map.keySet());
 
-        Collections.sort(ListaNombres);
-
-        StringBuilder sb = new StringBuilder();
-
-        //al tener '\n' en el toString() de contactos hara salto de linea por cada contacto que se añada al StringBuilder en el bucle
-        for (String c : ListaNombres) {
-            sb.append(c.toString() + '\n');
-        }
-        return sb.toString();
+//        Collections.sort(ListaNombres);
+//
+//        StringBuilder sb = new StringBuilder();
+//
+//        //al tener '\n' en el toString() de contactos hara salto de linea por cada contacto que se añada al StringBuilder en el bucle
+//        for (String c : ListaNombres) {
+//            sb.append(c.toString() + '\n');
+//        }
+//        return sb.toString();
+          return "";
 
     }
 
@@ -204,7 +215,7 @@ public class Agenda {
 
     }
 
-    //Metodo trabajando con ficheros
+    //Metodo trabajando con ficheros no lo usamos trabajando con BBDD
     public void guardarAgenda(String documentotxt) throws IOException {
 
         File f = new File(documentotxt);
@@ -216,7 +227,7 @@ public class Agenda {
 
         try (FileOutputStream fos = new FileOutputStream(f); ObjectOutputStream oos = new ObjectOutputStream(fos)) {
 
-            oos.writeObject(map);
+//            oos.writeObject(map);
             bck.delete();
 
         } catch (IOException e) {
@@ -226,20 +237,25 @@ public class Agenda {
 
     }
 
-    //Metodo trabajando con ficheros
+    //Metodo trabajando con ficheros, no lo usamos trabajando con BBDD
     public void cargarAgenda(String documentotxt) throws FileNotFoundException, IOException, ClassNotFoundException {
 
         try (FileInputStream fis = new FileInputStream(documentotxt); ObjectInputStream ois = new ObjectInputStream(fis);) {
-            map = (HashMap<String, Contactos>) ois.readObject();
+//            map = (HashMap<String, Contactos>) ois.readObject();
         }
     }
 
     //metodo poner nombres en lista interfaz grafica
     public ArrayList<String> getNombres() {
 
-        ArrayList<String> al;
+        ArrayList<String> al = null;
 
-        al = new ArrayList<>(map.keySet());
+        try {
+            al = cd.nombres();
+        } catch (SQLException ex) {
+            //solo saltaria exception si tiene problemas al abrir o cerrar conexion con BBDD
+            System.out.println(ex.getMessage());;
+        }
 
         Collections.sort(al);
 
@@ -248,9 +264,15 @@ public class Agenda {
 
     //metodo para asignar datos cuando elijan contactos en la lista interfaz grafica
     public Contactos cargarDatos(String nombre) {
-
-        return map.get(nombre);
-
+        Contactos c = null;
+        try {
+            c= cd.select(nombre);
+        } catch (SQLException ex) {
+            //haria la select de nombres en la lista, no hay opcion de no clickar nombre que no exista
+            //daria exception si tiene problemas al abrir o cerrar conexion con BBDD
+            System.out.println(ex.getMessage());;
+        }
+        return c;
     }
 
 }
