@@ -1,0 +1,11 @@
+1-,Amigo,Aaron,944303056,aupaxd@gmail.com,15/07/1992, 
+2-,Profesional,Borja,69696969,,,Ceinmark
+3-,Profesional,Rodrigo,,,,Nasa
+4-,Amigo,Aaron,dsfg,au@gmail.com,15/07/1992, 
+5-,Profesional,Jose,,,,Nasa
+6-,Profesional,,3523,,,Nasa
+7-,Amigo,Alberto,dgdg,,, 
+8-,Amigo,Luis,,luis,15/10/2000, 
+9-,Amigo,Perez,354235,,15/03/2001, 
+10-,Amigo,Karlos,2345253,,15/07, 
+11-,Profesional,Picapiedra,3214324,,, 
