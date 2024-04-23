@@ -27,7 +27,7 @@ public class Agenda {
         cd = new contactosDAO();
     }
 
-    public void alta(String tipoContacto, String nombre, String numeroTelefono, String email, String cumpleanios, String empresa) throws ParseException, DatosException {
+    public void alta(String tipoContacto, String nombre, String numeroTelefono, String email, String cumpleanios, String empresa) throws ParseException, DatosException, SQLexcep {
 
         SimpleDateFormat formatoAnio = new SimpleDateFormat("dd/MM/yyyy");
 
@@ -64,23 +64,27 @@ public class Agenda {
             if (ex.getErrorCode()== 1){
             DatosException exRepetido = new DatosException(nombre, true);
             throw exRepetido; 
+            }else{
+            SQLexcep SQLex = new SQLexcep(ex.getErrorCode());
+            throw SQLex;
             }
         }
     }
 
-    public void baja(String nombre) {
+    public void baja(String nombre) throws SQLexcep {
         try {
             cd.delete(nombre);
             
         } catch (SQLException ex) {
             //no deberia saltar exception, ya que el usuario no tiene opcion de elegir un nombre que no exista
             //exception solo seria algun problema con la BBDD al abrir conexion o cerrar conexion
-            System.out.println(ex);
+              SQLexcep SQLex = new SQLexcep(ex.getErrorCode());
+              throw SQLex;
         }
 
     }
 
-    public void actualizar(String nombre, String numeroTelefono, String email, String cumpleanios, String empresa) throws ParseException, DatosException {
+    public void actualizar(String nombre, String numeroTelefono, String email, String cumpleanios, String empresa) throws ParseException, DatosException, SQLexcep {
 
         SimpleDateFormat formatoAnio = new SimpleDateFormat("dd/MM/yyyy");
 
@@ -96,7 +100,8 @@ public class Agenda {
         } catch (SQLException ex) {
             //el usuario trabaja sobre lista, contacto ya creado en BBDD, no puede ser que el nombre no exista
             //daria exception si tiene problemas al abrir conexion o cerrar conexion en BBDD
-            System.out.println(ex.getMessage());  
+            SQLexcep SQLex = new SQLexcep(ex.getErrorCode());
+              throw SQLex; 
         }
         c.setCorreo((email.isEmpty() ? c.getCorreo() : email));
         c.setNumero((numeroTelefono.isEmpty() ? c.getNumero() : Integer.valueOf(numeroTelefono)));
@@ -115,17 +120,19 @@ public class Agenda {
         } catch (SQLException ex) {
             //ya tratamos exception de numero telefono invalidos, email que no cumple pattern en interfaz
             //No se puede actualizar nombre, solo saltaria exception si hubiera problemas de conexion a BBDD
-            System.out.println(ex);
+            SQLexcep SQLex = new SQLexcep(ex.getErrorCode());
+              throw SQLex;
         }
     }
     //metodo interfaz con Scanner
-    public String buscar(String nombre) {
+    public String buscar(String nombre) throws SQLexcep {
         Contactos c = null;
         try {
             c = cd.select(nombre);
         } catch (SQLException ex) {
             //no usamos este metodo en interfaz grafica
-            System.out.println(ex.getErrorCode());
+            SQLexcep SQLex = new SQLexcep(ex.getErrorCode());
+              throw SQLex;
         }
 
         return c.toString();
@@ -263,14 +270,15 @@ public class Agenda {
     }
 
     //metodo para asignar datos cuando elijan contactos en la lista interfaz grafica
-    public Contactos cargarDatos(String nombre) {
+    public Contactos cargarDatos(String nombre) throws SQLexcep {
         Contactos c = null;
         try {
             c= cd.select(nombre);
         } catch (SQLException ex) {
             //haria la select de nombres en la lista, no hay opcion de no clickar nombre que no exista
             //daria exception si tiene problemas al abrir o cerrar conexion con BBDD
-            System.out.println(ex.getMessage());;
+            SQLexcep SQLex = new SQLexcep(ex.getErrorCode());
+              throw SQLex;
         }
         return c;
     }

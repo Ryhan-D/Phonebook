@@ -2,6 +2,7 @@ package Interfaz;
 
 import Control.Agenda;
 import Control.DatosException;
+import Control.SQLexcep;
 import Control.archivoException;
 import Cuerpo.Contactos;
 import Cuerpo.Contactos_Amigos;
@@ -20,7 +21,6 @@ public class Ventana extends java.awt.Frame {
     FileDialog safe;
     FileDialog load;
     cargarContactos contactosLoad;
-   
 
     public Ventana() {
         a = new Agenda();
@@ -30,7 +30,6 @@ public class Ventana extends java.awt.Frame {
         load = new FileDialog(this, "Cargar", FileDialog.LOAD);
         contactosLoad = new cargarContactos(this, true);
         siNo = new sionodialog(this, true);
-       
 
         initComponents();
 
@@ -69,7 +68,6 @@ public class Ventana extends java.awt.Frame {
         correoTF.setVisible(false);
         cumpleañosTF.setVisible(false);
 
-   
     }
 
     private void recargarLista() {
@@ -153,9 +151,9 @@ public class Ventana extends java.awt.Frame {
         modificarB.setLabel("MODIFICAR");
         modificarB.setMinimumSize(new java.awt.Dimension(110, 29));
         modificarB.setPreferredSize(new java.awt.Dimension(110, 29));
-        modificarB.addMouseListener(new java.awt.event.MouseAdapter() {
-            public void mouseClicked(java.awt.event.MouseEvent evt) {
-                modificarBMouseClicked(evt);
+        modificarB.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                modificarBActionPerformed(evt);
             }
         });
         panel1.add(modificarB);
@@ -189,6 +187,7 @@ public class Ventana extends java.awt.Frame {
         listarB.setFont(new java.awt.Font("Arial Black", 1, 14)); // NOI18N
         listarB.setLabel("LISTAR");
         listarB.setMinimumSize(new java.awt.Dimension(110, 29));
+        listarB.setPreferredSize(new java.awt.Dimension(110, 29));
         listarB.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 listarBActionPerformed(evt);
@@ -370,33 +369,6 @@ public class Ventana extends java.awt.Frame {
 
     }//GEN-LAST:event_exitForm
 
-    //boton modificar
-    private void modificarBMouseClicked(java.awt.event.MouseEvent evt) {//GEN-FIRST:event_modificarBMouseClicked
-
-        try {
-            a.actualizar(nombreTF.getText(), telefonoTF.getText(), correoTF.getText(), cumpleañosTF.getText(), cumpleañosTF.getText());
-
-            exceptionD.ponerMensaje(" Contacto actualizado");
-            exceptionD.setVisible(true);
-        } catch (ParseException ex) {
-
-            exceptionD.ponerMensaje(" Introduzca fecha de nacimiento valida dd/mm/year");
-            exceptionD.setVisible(true);
-        } catch (NumberFormatException ex) {
-
-            exceptionD.ponerMensaje(" Introduzca numero de telefono valido");
-            exceptionD.setVisible(true);
-        } catch (DatosException ex) {
-            if (ex.isEmail() == true) {
-
-                exceptionD.ponerMensaje(" Email introducido no valido");
-                exceptionD.setVisible(true);
-            }
-        }
-
-
-    }//GEN-LAST:event_modificarBMouseClicked
-
     //boton de baja
     private void bajaBActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_bajaBActionPerformed
 
@@ -405,9 +377,15 @@ public class Ventana extends java.awt.Frame {
         siNo.setVisible(true);
 
         if (siNo.isRespuesta() == true) {
-            a.baja(nombreTF.getText());
+            try {
+                a.baja(nombreTF.getText());
+                lista.remove(nombreTF.getText());
+            } catch (SQLexcep ex) {
+                exceptionD.ponerMensaje(" Se ha producido algun error con la base de datos, codigo: " + ex.getCodigoError());
+                exceptionD.setVisible(true);
+            }
 
-            lista.remove(nombreTF.getText());
+            
 
             choiceContacto.add("Grupo Contacto");
             choiceContacto.select("Grupo Contacto");
@@ -463,9 +441,14 @@ public class Ventana extends java.awt.Frame {
             validate();
             repaint();
         } else {
-           
-            
-            Contactos c = a.cargarDatos(nombre);
+
+            Contactos c = null;
+            try {
+                c = a.cargarDatos(nombre);
+            } catch (SQLexcep ex) {
+                exceptionD.ponerMensaje(" Se ha producido algun error con la base de datos, codigo: " + ex.getCodigoError());
+                exceptionD.setVisible(true);
+            }
 
             if (c instanceof Contactos_Amigos) {
                 cumpleañosTA.setVisible(true);
@@ -516,7 +499,7 @@ public class Ventana extends java.awt.Frame {
             choiceContacto.setEnabled(false);
             bajaB.setEnabled(true);
             modificarB.setEnabled(true);
-           
+
     }//GEN-LAST:event_listaItemStateChanged
     }
 
@@ -524,7 +507,7 @@ public class Ventana extends java.awt.Frame {
     private void altaBActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_altaBActionPerformed
         try {
             a.alta(choiceContacto.getSelectedItem(), nombreTF.getText(), telefonoTF.getText(), correoTF.getText(), cumpleañosTF.getText(), cumpleañosTF.getText());
-
+            recargarLista();
         } catch (ParseException ex) {
             exceptionD.ponerMensaje(" Introduzca fecha de nacimiento valida dd/mm/year");
             exceptionD.setVisible(true);
@@ -544,9 +527,11 @@ public class Ventana extends java.awt.Frame {
                 exceptionD.ponerMensaje(" El nombre " + ex.getNombre() + " ya existe");
                 exceptionD.setVisible(true);
             }
+        } catch (SQLexcep ex) {
+            exceptionD.ponerMensaje(" Se ha producido algun error con la base de datos, codigo: " + ex.getCodigoError());
+            exceptionD.setVisible(true);
         }
 
-        recargarLista();
 
     }//GEN-LAST:event_altaBActionPerformed
 
@@ -603,7 +588,13 @@ public class Ventana extends java.awt.Frame {
         for (int i = 1; i < lista.getItemCount(); i++) {
             String contacto = lista.getItem(i);
 
-            Contactos c = (a.cargarDatos(contacto));
+            Contactos c = null;
+            try {
+                c = (a.cargarDatos(contacto));
+            } catch (SQLexcep ex) {
+                exceptionD.ponerMensaje(" Se ha producido algun error con la base de datos, codigo: " + ex.getCodigoError());
+                exceptionD.setVisible(true);
+            }
 
             if (c instanceof Contactos_Amigos) {
                 contactosLoad.ponerMensajelist("TIPO: Amigo" + " NOMBRE: " + c.getNombre() + " TELEFONO: " + (c.getNumero() + "") + " CORREO: " + c.getCorreo() + " CUMPLEAÑOS: " + ((Contactos_Amigos) c).getFechaCumpleanios());
@@ -616,7 +607,32 @@ public class Ventana extends java.awt.Frame {
         contactosLoad.limpiarLista();
     }//GEN-LAST:event_listarBActionPerformed
 
-    
+    //boton modificar
+    private void modificarBActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_modificarBActionPerformed
+        try {
+            a.actualizar(nombreTF.getText(), telefonoTF.getText(), correoTF.getText(), cumpleañosTF.getText(), cumpleañosTF.getText());
+
+            exceptionD.ponerMensaje(" Contacto actualizado");
+            exceptionD.setVisible(true);
+        } catch (ParseException ex) {
+
+            exceptionD.ponerMensaje(" Introduzca fecha de nacimiento valida dd/mm/year");
+            exceptionD.setVisible(true);
+        } catch (NumberFormatException ex) {
+
+            exceptionD.ponerMensaje(" Introduzca numero de telefono valido");
+            exceptionD.setVisible(true);
+        } catch (DatosException ex) {
+            if (ex.isEmail() == true) {
+
+                exceptionD.ponerMensaje(" Email introducido no valido");
+                exceptionD.setVisible(true);
+            }
+        } catch (SQLexcep ex) {
+            exceptionD.ponerMensaje(" Se ha producido algun error con la base de datos, codigo: " + ex.getCodigoError());
+            exceptionD.setVisible(true);
+        }
+    }//GEN-LAST:event_modificarBActionPerformed
 
     /**
      * @param args the command line arguments

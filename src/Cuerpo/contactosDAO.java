@@ -1,7 +1,4 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
+
 package Cuerpo;
 
 import java.sql.Connection;
@@ -14,10 +11,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 
-/**
- *
- * @author eiron
- */
+
 public class contactosDAO {
 
     Connection abrirCon() throws SQLException {
@@ -174,7 +168,9 @@ public class contactosDAO {
         return al;
 
     }
-
+    
+    
+    //metodo para probar la agenda con hashmap usando la BBDD como cuando trabajabamos con ficheros
     public HashMap<String, Contactos> getContactos() throws SQLException {
         Connection con = abrirCon();
 

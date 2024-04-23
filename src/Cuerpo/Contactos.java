@@ -1,17 +1,11 @@
-/*
- * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
- * Click nbfs://nbhost/SystemFileSystem/Templates/Classes/Class.java to edit this template
- */
+
 package Cuerpo;
 
 import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 
-/**
- *
- * @author MULTI
- */
+
 abstract public class Contactos implements Comparable,Serializable {
 
     private String nombre;

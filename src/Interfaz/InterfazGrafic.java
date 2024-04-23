@@ -5,10 +5,8 @@ import Control.DatosException;
 import Control.archivoException;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.StreamCorruptedException;
 import java.sql.SQLException;
 import java.text.ParseException;
-import java.util.Scanner;
 
 public class InterfazGrafic {
 //
@@ -17,7 +15,7 @@ public class InterfazGrafic {
 //        Scanner sc = new Scanner(System.in);
 //
         Agenda a = new Agenda();
-        System.out.println(a.cargarDatos("Aaron"));
+//        System.out.println(a.cargarDatos("Aaron"));
 //        while (true) {
 //            System.out.println("0.Salir");
 //            System.out.println("1.Alta");
