@@ -1,4 +1,3 @@
-
 package Cuerpo;
 
 import java.sql.Connection;
@@ -11,91 +10,67 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 
-
 public class contactosDAO {
 
     Connection abrirCon() throws SQLException {
         return DriverManager.getConnection("jdbc:oracle:thin:@localhost:1521:xe", "scott", "tiger");
     }
-   
+
     public Contactos select(String nombre) throws SQLException {
         Connection con = abrirCon();
 
         PreparedStatement ps = con.prepareStatement("select * from contactos where nombre=?");
         ps.setString(1, nombre);
         ResultSet rs = ps.executeQuery();
-        
-        String tipo = null;
-        String nombr = null;
-        Integer numero = null;
-        String correo = null;
-        Date cumple = null;
-        String empresa = null;
+        Contactos c = null;
         while (rs.next()) {
-            tipo = rs.getString(1);
-            nombr = rs.getString(2);
-            numero = rs.getInt(3);
+            String tipo = rs.getString(1);
+            String nombr = rs.getString(2);
+            Integer numero = rs.getInt(3);
             if (numero == 0) {
                 numero = null;
             }
-            correo = rs.getString(4);
-            cumple = rs.getDate(5);
-            empresa = rs.getString(6);
+            String correo = rs.getString(4);
+            Date cumple = rs.getDate(5);
+            String empresa = rs.getString(6);
+
+            if (tipo.equalsIgnoreCase("a")) {
+                c = new Contactos_Amigos(nombre, numero, correo, cumple);
+
+            } else {
+                c = new Contactos_Profesionales(nombre, numero, correo, empresa);
+
+            }
         }
         ps.close();
         con.close();
-        
-        Contactos c;
-        if (tipo.equalsIgnoreCase("a")) {
-            c = new Contactos_Amigos(nombre);
-            c.setCorreo(correo);
-            c.setNumero(numero);
-           ((Contactos_Amigos)c).setFechaCumpleanios(cumple);
-            
-        } else {
-            c = new Contactos_Profesionales(nombre);
-            c.setCorreo(correo);
-            c.setNumero(numero);
-            ((Contactos_Profesionales)c).setNombreEmpresa(empresa);
-            
-        }
-            return c;
+
+        return c;
     }
 
     public void insert(Contactos c) throws SQLException {
         Connection con = abrirCon();
         PreparedStatement ps;
 
-        if (c instanceof Contactos_Amigos) {
-            ps = con.prepareStatement("insert into amigos values (?,?,?,?)");
-            ps.setString(1, c.getNombre());
-            if (c.getNumero() == null) {
-                ps.setNull(2, java.sql.Types.INTEGER);
-            } else {
-                ps.setInt(2, c.getNumero());
-            }
-            ps.setString(3, c.getCorreo());
-
-            Date cumple = ((Contactos_Amigos) c).getFechaCumpleanios();
-
-            if (cumple == null) {
-                ps.setNull(4, java.sql.Types.DATE);
-            } else {
-                java.sql.Date sd = new java.sql.Date(((Contactos_Amigos) c).getFechaCumpleanios().getTime());
-                ps.setDate(4, sd);
-            }
+        ps = con.prepareStatement("insert into contactos (tipo,nombre,telefono,correo,cumpleaños,empre) values (?,?,?,?,?,?)");
+        ps.setString(1, c instanceof Contactos_Amigos ? "a" : "p");
+        ps.setString(2, c.getNombre());
+        if (c.getNumero() == null) {
+            ps.setNull(3, java.sql.Types.INTEGER);
         } else {
-            ps = con.prepareStatement("insert into profesionales values (?,?,?,?)");
-            ps.setString(1, c.getNombre());
-            if (c.getNumero() == null) {
-                ps.setNull(2, java.sql.Types.INTEGER);
-            } else {
-                ps.setInt(2, c.getNumero());
-            }
-            ps.setString(3, c.getCorreo());
-            ps.setString(4, ((Contactos_Profesionales) c).getNombreEmpresa());
-
+            ps.setInt(3, c.getNumero());
         }
+        ps.setString(4, c.getCorreo());
+        Date cumple = c instanceof Contactos_Amigos ? ((Contactos_Amigos) c).getFechaCumpleanios() : null;
+        if (cumple == null) {
+            ps.setNull(5, java.sql.Types.DATE);
+        } else {
+            java.sql.Date sd = new java.sql.Date(cumple.getTime());
+            ps.setDate(5, sd);
+        }
+
+        ps.setString(6, c instanceof Contactos_Profesionales ? ((Contactos_Profesionales) c).getNombreEmpresa() : null);
+
         ps.executeUpdate();
         ps.close();
         con.close();
@@ -104,35 +79,27 @@ public class contactosDAO {
     public void update(Contactos c) throws SQLException {
         Connection con = abrirCon();
         PreparedStatement ps;
-        if (c instanceof Contactos_Amigos) {
-            ps = con.prepareStatement("update amigos set telefono=?, correo=?, cumpleaños=? where nombre=?");
-            if (c.getNumero() == null) {
-                ps.setNull(1, java.sql.Types.INTEGER);
-            } else {
-                ps.setInt(1, c.getNumero());
-            }
-            ps.setString(2, c.getCorreo());
 
-            Date cumple = ((Contactos_Amigos) c).getFechaCumpleanios();
-
-            if (cumple == null) {
-                ps.setNull(3, java.sql.Types.DATE);
-            } else {
-                java.sql.Date sd = new java.sql.Date(((Contactos_Amigos) c).getFechaCumpleanios().getTime());
-                ps.setDate(3, sd);
-            }
-            ps.setString(4, c.getNombre());
+        ps = con.prepareStatement("update contactos set telefono=?, correo=?, cumpleaños=?,empre = ?, tipo = ? where nombre=?");
+        if (c.getNumero() == null) {
+            ps.setNull(1, java.sql.Types.INTEGER);
         } else {
-            ps = con.prepareStatement("update profesionales set telefono=?, correo=?, empresa=? where nombre=?");
-            if (c.getNumero() == null) {
-                ps.setNull(1, java.sql.Types.INTEGER);
-            } else {
-                ps.setInt(1, c.getNumero());
-            }
-            ps.setString(2, c.getCorreo());
-            ps.setString(3, ((Contactos_Profesionales) c).getNombreEmpresa());
-            ps.setString(4, c.getNombre());
+            ps.setInt(1, c.getNumero());
         }
+        ps.setString(2, c.getCorreo());
+
+        Date cumple = c instanceof Contactos_Amigos ? ((Contactos_Amigos) c).getFechaCumpleanios() : null;
+
+        if (cumple == null) {
+            ps.setNull(3, java.sql.Types.DATE);
+        } else {
+            java.sql.Date sd = new java.sql.Date(cumple.getTime());
+            ps.setDate(3, sd);
+        }
+        ps.setString(4, c instanceof Contactos_Profesionales ? ((Contactos_Profesionales) c).getNombreEmpresa() : null);
+        ps.setString(5, c instanceof Contactos_Amigos ? "a" : "p");
+        ps.setString(6, c.getNombre());
+
         ps.executeUpdate();
         ps.close();
         con.close();
@@ -141,14 +108,10 @@ public class contactosDAO {
     public void delete(String nombre) throws SQLException {
         Connection con = abrirCon();
         PreparedStatement ps;
-        if (select(nombre) instanceof Contactos_Amigos) {
-            ps = con.prepareStatement("delete from amigos where nombre=?");
+     
+            ps = con.prepareStatement("delete from contactos where nombre=?");
             ps.setString(1, nombre);
 
-        } else {
-            ps = con.prepareStatement("delete from profesionales where nombre=?");
-            ps.setString(1, nombre);
-        }
         ps.executeUpdate();
         ps.close();
         con.close();
@@ -168,8 +131,7 @@ public class contactosDAO {
         return al;
 
     }
-    
-    
+
     //metodo para probar la agenda con hashmap usando la BBDD como cuando trabajabamos con ficheros
     public HashMap<String, Contactos> getContactos() throws SQLException {
         Connection con = abrirCon();
@@ -179,22 +141,16 @@ public class contactosDAO {
         Statement st = con.createStatement();
         ResultSet rs = st.executeQuery("select * from contactos order by nombre");
 
-        String tipo = null;
-        String nombr = null;
-        Integer numero = null;
-        String correo = null;
-        Date cumple = null;
-        String empresa = null;
         while (rs.next()) {
-            tipo = rs.getString(1);
-            nombr = rs.getString(2);
-            numero = rs.getInt(3);
+            String tipo = rs.getString(1);
+            String nombr = rs.getString(2);
+            Integer numero = rs.getInt(3);
             if (numero == 0) {
                 numero = null;
             }
-            correo = rs.getString(4);
-            cumple = rs.getDate(5);
-            empresa = rs.getString(6);
+            String correo = rs.getString(4);
+            Date cumple = rs.getDate(5);
+            String empresa = rs.getString(6);
             if (tipo.equalsIgnoreCase("a")) {
                 Contactos_Amigos ca = new Contactos_Amigos(nombr, numero, correo, cumple);
 
@@ -210,5 +166,4 @@ public class contactosDAO {
 
         return contactos;
     }
-
 }

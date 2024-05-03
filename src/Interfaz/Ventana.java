@@ -4,9 +4,6 @@ import Control.Agenda;
 import Control.DatosException;
 import Control.SQLexcep;
 import Control.archivoException;
-import Cuerpo.Contactos;
-import Cuerpo.Contactos_Amigos;
-import Cuerpo.Contactos_Profesionales;
 import java.awt.FileDialog;
 import java.io.IOException;
 import java.text.ParseException;
@@ -43,8 +40,13 @@ public class Ventana extends java.awt.Frame {
 
         lista.add("<Añadir nuevo contacto>");
 
-        for (String c : a.getNombres()) {
-            lista.add(c);
+        try {
+            for (String c : a.getNombres()) {
+                lista.add(c);
+            }
+        } catch (SQLexcep ex) {
+            exceptionD.ponerMensaje(ex.toString());
+            exceptionD.setVisible(true);
         }
 
         choiceContacto.add("Grupo Contacto");
@@ -74,13 +76,17 @@ public class Ventana extends java.awt.Frame {
 
         ArrayList<String> al;
 
-        al = new ArrayList<>(a.getNombres());
+        try {
+            al = new ArrayList<>(a.getNombres());
+            lista.removeAll();
+            lista.add("<Añadir nuevo contacto>");
+            for (String c : al) {
 
-        lista.removeAll();
-        lista.add("<Añadir nuevo contacto>");
-        for (String c : al) {
-
-            lista.add(c);
+                lista.add(c);
+            }
+        } catch (SQLexcep ex) {
+            exceptionD.ponerMensaje(ex.toString());
+            exceptionD.setVisible(true);
         }
 
     }
@@ -187,7 +193,6 @@ public class Ventana extends java.awt.Frame {
         listarB.setFont(new java.awt.Font("Arial Black", 1, 14)); // NOI18N
         listarB.setLabel("LISTAR");
         listarB.setMinimumSize(new java.awt.Dimension(110, 29));
-        listarB.setPreferredSize(new java.awt.Dimension(110, 29));
         listarB.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 listarBActionPerformed(evt);
@@ -380,25 +385,26 @@ public class Ventana extends java.awt.Frame {
             try {
                 a.baja(nombreTF.getText());
                 lista.remove(nombreTF.getText());
+
+                choiceContacto.add("Grupo Contacto");
+                choiceContacto.select("Grupo Contacto");
+
+                nombreTF.setText("");
+                telefonoTF.setText("");
+                correoTF.setText("");
+                cumpleañosTF.setText("");
+
+                choiceContacto.setEnabled(false);
+                bajaB.setEnabled(false);
+                modificarB.setEnabled(false);
+
+                panel4.revalidate();
+                panel4.repaint();
+
             } catch (SQLexcep ex) {
-                exceptionD.ponerMensaje(" Se ha producido algun error con la base de datos, codigo: " + ex.getCodigoError());
+                exceptionD.ponerMensaje(ex.toString());
                 exceptionD.setVisible(true);
             }
-
-            
-
-            choiceContacto.add("Grupo Contacto");
-            choiceContacto.select("Grupo Contacto");
-            choiceContacto.setEnabled(false);
-            nombreTF.setText("");
-            telefonoTF.setText("");
-            correoTF.setText("");
-            cumpleañosTF.setText("");
-            bajaB.setEnabled(false);
-            modificarB.setEnabled(false);
-
-            panel4.revalidate();
-            panel4.repaint();
 
         } else {
             siNo.setVisible(false);
@@ -415,16 +421,18 @@ public class Ventana extends java.awt.Frame {
             choiceContacto.setEnabled(true);
             bajaB.setEnabled(false);
             modificarB.setEnabled(false);
+
             nombreTF.setEditable(true);
             nombreTF.setText("");
             telefonoTF.setText("");
             correoTF.setText("");
             cumpleañosTF.setText("");
 
-            choiceContacto.select("Amigo");
             if (choiceContacto.getItemCount() > 2) {
                 choiceContacto.remove("Grupo Contacto");
             }
+
+            choiceContacto.select("Amigo");
 
             nombreL.setVisible(true);
             telefonoL.setVisible(true);
@@ -435,70 +443,70 @@ public class Ventana extends java.awt.Frame {
             telefonoTF.setVisible(true);
             correoTF.setVisible(true);
             cumpleañosTF.setVisible(true);
+
             agendaL.setVisible(false);
             telefonicaL.setVisible(false);
 
             validate();
             repaint();
+
         } else {
 
-            Contactos c = null;
+            String[] datos = null;
             try {
-                c = a.cargarDatos(nombre);
+                datos = a.cargarDatos(nombre);
+                if ("a".equalsIgnoreCase(datos[0])) {
+                    cumpleañosTA.setVisible(true);
+                    empresaTA.setVisible(false);
+
+                    cumpleañosTF.setText(datos[4]);
+
+                    if (choiceContacto.getItemCount() > 2) {
+                        choiceContacto.remove("Grupo Contacto");
+                    }
+
+                    choiceContacto.select("Amigo");
+
+                } else {
+                    cumpleañosTA.setVisible(false);
+                    empresaTA.setVisible(true);
+
+                    cumpleañosTF.setText(datos[4]);
+
+                    if (choiceContacto.getItemCount() > 2) {
+                        choiceContacto.remove("Grupo Contacto");
+                    }
+                    choiceContacto.select("Profesional");
+                }
+                nombreTF.setText(datos[1]);
+                telefonoTF.setText(datos[2]);
+                correoTF.setText(datos[3]);
+
+                nombreTF.setEditable(false);
+
+                nombreL.setVisible(true);
+                telefonoL.setVisible(true);
+                correoL.setVisible(true);
+                choiceContacto.setVisible(true);
+                nombreTF.setVisible(true);
+                telefonoTF.setVisible(true);
+                correoTF.setVisible(true);
+                cumpleañosTF.setVisible(true);
+                agendaL.setVisible(false);
+                telefonicaL.setVisible(false);
+
+                altaB.setEnabled(false);
+                choiceContacto.setEnabled(false);
+                bajaB.setEnabled(true);
+                modificarB.setEnabled(true);
             } catch (SQLexcep ex) {
-                exceptionD.ponerMensaje(" Se ha producido algun error con la base de datos, codigo: " + ex.getCodigoError());
+                exceptionD.ponerMensaje(ex.toString());
                 exceptionD.setVisible(true);
             }
 
-            if (c instanceof Contactos_Amigos) {
-                cumpleañosTA.setVisible(true);
-                empresaTA.setVisible(false);
-                choiceContacto.setEnabled(false);
-
-                if (((Contactos_Amigos) c).getFechaCumpleanios() == null) {
-                    cumpleañosTF.setText("");
-                } else {
-                    cumpleañosTF.setText(sdf.format(((Contactos_Amigos) c).getFechaCumpleanios()));
-                }
-
-                choiceContacto.select("Amigo");
-                if (choiceContacto.getItemCount() > 2) {
-                    choiceContacto.remove("Grupo Contacto");
-                }
-
-            } else {
-                cumpleañosTA.setVisible(false);
-                empresaTA.setVisible(true);
-                cumpleañosTF.setText(((Contactos_Profesionales) c).getNombreEmpresa());
-                choiceContacto.select("Profesional");
-                if (choiceContacto.getItemCount() > 2) {
-                    choiceContacto.remove("Grupo Contacto");
-                }
-            }
-            nombreTF.setText(c.getNombre());
-            correoTF.setText(c.getCorreo());
-
-            String numero = c.getNumero() + "";
-            telefonoTF.setText(c.getNumero() == null ? "" : numero);
-            nombreTF.setEditable(false);
-            nombreL.setVisible(true);
-            telefonoL.setVisible(true);
-            correoL.setVisible(true);
-            choiceContacto.setVisible(true);
-            nombreTF.setVisible(true);
-            telefonoTF.setVisible(true);
-            correoTF.setVisible(true);
-            cumpleañosTF.setVisible(true);
-            agendaL.setVisible(false);
-            telefonicaL.setVisible(false);
-
             validate();
             repaint();
 
-            altaB.setEnabled(false);
-            choiceContacto.setEnabled(false);
-            bajaB.setEnabled(true);
-            modificarB.setEnabled(true);
 
     }//GEN-LAST:event_listaItemStateChanged
     }
@@ -506,6 +514,7 @@ public class Ventana extends java.awt.Frame {
     //boton de alta
     private void altaBActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_altaBActionPerformed
         try {
+
             a.alta(choiceContacto.getSelectedItem(), nombreTF.getText(), telefonoTF.getText(), correoTF.getText(), cumpleañosTF.getText(), cumpleañosTF.getText());
             recargarLista();
         } catch (ParseException ex) {
@@ -513,7 +522,6 @@ public class Ventana extends java.awt.Frame {
             exceptionD.setVisible(true);
 
         } catch (NumberFormatException ex) {
-
             exceptionD.ponerMensaje(" Introduzca numero de telefono valido");
             exceptionD.setVisible(true);
         } catch (DatosException ex) {
@@ -528,7 +536,7 @@ public class Ventana extends java.awt.Frame {
                 exceptionD.setVisible(true);
             }
         } catch (SQLexcep ex) {
-            exceptionD.ponerMensaje(" Se ha producido algun error con la base de datos, codigo: " + ex.getCodigoError());
+            exceptionD.ponerMensaje(ex.toString());
             exceptionD.setVisible(true);
         }
 
@@ -588,18 +596,20 @@ public class Ventana extends java.awt.Frame {
         for (int i = 1; i < lista.getItemCount(); i++) {
             String contacto = lista.getItem(i);
 
-            Contactos c = null;
+            String[] datos = null;
             try {
-                c = (a.cargarDatos(contacto));
+                datos = (a.cargarDatos(contacto));
             } catch (SQLexcep ex) {
-                exceptionD.ponerMensaje(" Se ha producido algun error con la base de datos, codigo: " + ex.getCodigoError());
+                exceptionD.ponerMensaje(ex.toString());
                 exceptionD.setVisible(true);
             }
-
-            if (c instanceof Contactos_Amigos) {
-                contactosLoad.ponerMensajelist("TIPO: Amigo" + " NOMBRE: " + c.getNombre() + " TELEFONO: " + (c.getNumero() + "") + " CORREO: " + c.getCorreo() + " CUMPLEAÑOS: " + ((Contactos_Amigos) c).getFechaCumpleanios());
+            String correo = datos[3]== null ? "" : datos[3];
+            String empresa = datos[4] == null ? "":datos[4];
+            
+            if ("a".equalsIgnoreCase(datos[0])) {
+                contactosLoad.ponerMensajelist("TIPO: Amigo" + " NOMBRE: " + datos[1] + " TELEFONO: " + datos[2] + " CORREO: " + correo + " CUMPLEAÑOS: " + datos[4]);
             } else {
-                contactosLoad.ponerMensajelist("TIPO: Profesional" + " NOMBRE: " + c.getNombre() + " TELEFONO: " + (c.getNumero() + "") + " CORREO: " + c.getCorreo() + " EMPRESA: " + ((Contactos_Profesionales) c).getNombreEmpresa());
+                contactosLoad.ponerMensajelist("TIPO: Profesional" + " NOMBRE: " + datos[1] + " TELEFONO: " + datos[2] + " CORREO: " + correo + " EMPRESA: " + empresa);
             }
 
         }
@@ -629,7 +639,7 @@ public class Ventana extends java.awt.Frame {
                 exceptionD.setVisible(true);
             }
         } catch (SQLexcep ex) {
-            exceptionD.ponerMensaje(" Se ha producido algun error con la base de datos, codigo: " + ex.getCodigoError());
+            exceptionD.ponerMensaje(ex.toString());
             exceptionD.setVisible(true);
         }
     }//GEN-LAST:event_modificarBActionPerformed

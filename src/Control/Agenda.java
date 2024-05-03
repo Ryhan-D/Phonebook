@@ -21,7 +21,6 @@ import java.util.*;
 public class Agenda {
 
     contactosDAO cd;
-  
 
     public Agenda() {
         cd = new contactosDAO();
@@ -45,28 +44,26 @@ public class Agenda {
 
         Contactos contacto;
         Integer numero = numeroTelefono.isEmpty() ? null : Integer.valueOf(numeroTelefono);
-        Date fechaAnio = (cumpleanios.isEmpty() ? null : formatoAnio.parse(cumpleanios));
-        if ("Amigo".equalsIgnoreCase(tipoContacto)) {
 
+        if ("Amigo".equalsIgnoreCase(tipoContacto)) {
+            Date fechaAnio = (cumpleanios.isEmpty() ? null : formatoAnio.parse(cumpleanios));
             contacto = new Contactos_Amigos(nombre, numero, email, fechaAnio);
 
         } else {
 
             contacto = new Contactos_Profesionales(nombre, numero, email, empresa);
-
         }
-
         try {
             cd.insert(contacto);
-           
+
         } catch (SQLException ex) {
-            //error code 1 es PK violated, nombre ya existe
-            if (ex.getErrorCode()== 1){
-            DatosException exRepetido = new DatosException(nombre, true);
-            throw exRepetido; 
-            }else{
-            SQLexcep SQLex = new SQLexcep(ex.getErrorCode());
-            throw SQLex;
+            //error code 1 es PK violated, error code 20001 es el error del trigger nombre ya existe
+            if (ex.getErrorCode() == 1 || ex.getErrorCode() == 20001) {
+                DatosException exRepetido = new DatosException(nombre, true);
+                throw exRepetido;
+            } else {
+                SQLexcep SQLex = new SQLexcep(ex.getErrorCode());
+                throw SQLex;
             }
         }
     }
@@ -74,12 +71,12 @@ public class Agenda {
     public void baja(String nombre) throws SQLexcep {
         try {
             cd.delete(nombre);
-            
+
         } catch (SQLException ex) {
             //no deberia saltar exception, ya que el usuario no tiene opcion de elegir un nombre que no exista
             //exception solo seria algun problema con la BBDD al abrir conexion o cerrar conexion
-              SQLexcep SQLex = new SQLexcep(ex.getErrorCode());
-              throw SQLex;
+            SQLexcep SQLex = new SQLexcep(ex.getErrorCode());
+            throw SQLex;
         }
 
     }
@@ -97,42 +94,38 @@ public class Agenda {
         Contactos c = null;
         try {
             c = (Contactos) cd.select(nombre);
+            c.setCorreo((email.isEmpty() ? "" : email));
+            c.setNumero((numeroTelefono.isEmpty() ? null : Integer.valueOf(numeroTelefono)));
+
+            if (c instanceof Contactos_Amigos) {
+                ((Contactos_Amigos) c).setFechaCumpleanios(cumpleanios.isEmpty() ? null : formatoAnio.parse(cumpleanios));
+
+            } else {
+                ((Contactos_Profesionales) c).setNombreEmpresa(empresa.isEmpty() ? "" : empresa);
+            }
         } catch (SQLException ex) {
-            //el usuario trabaja sobre lista, contacto ya creado en BBDD, no puede ser que el nombre no exista
-            //daria exception si tiene problemas al abrir conexion o cerrar conexion en BBDD
             SQLexcep SQLex = new SQLexcep(ex.getErrorCode());
-              throw SQLex; 
-        }
-        c.setCorreo((email.isEmpty() ? c.getCorreo() : email));
-        c.setNumero((numeroTelefono.isEmpty() ? c.getNumero() : Integer.valueOf(numeroTelefono)));
-
-        if (c instanceof Contactos_Amigos) {
-            Date fechaAnio = (cumpleanios.isEmpty() ? ((Contactos_Amigos) c).getFechaCumpleanios() : formatoAnio.parse(cumpleanios));
-            ((Contactos_Amigos) c).setFechaCumpleanios(fechaAnio);
-
-        } else if (c instanceof Contactos_Profesionales) {
-            ((Contactos_Profesionales) c).setNombreEmpresa(empresa.isEmpty() ? ((Contactos_Profesionales) c).getNombreEmpresa() : empresa);
+            throw SQLex;
         }
 
         //update BBDD
         try {
             cd.update(c);
         } catch (SQLException ex) {
-            //ya tratamos exception de numero telefono invalidos, email que no cumple pattern en interfaz
-            //No se puede actualizar nombre, solo saltaria exception si hubiera problemas de conexion a BBDD
             SQLexcep SQLex = new SQLexcep(ex.getErrorCode());
-              throw SQLex;
+            throw SQLex;
         }
     }
+
     //metodo interfaz con Scanner
     public String buscar(String nombre) throws SQLexcep {
         Contactos c = null;
         try {
             c = cd.select(nombre);
         } catch (SQLException ex) {
-            //no usamos este metodo en interfaz grafica
+
             SQLexcep SQLex = new SQLexcep(ex.getErrorCode());
-              throw SQLex;
+            throw SQLex;
         }
 
         return c.toString();
@@ -143,7 +136,6 @@ public class Agenda {
     public String ordenarPorNombre() {
 
 //        ArrayList<String> ListaNombres = new ArrayList<>(map.keySet());
-
 //        Collections.sort(ListaNombres);
 //
 //        StringBuilder sb = new StringBuilder();
@@ -153,12 +145,12 @@ public class Agenda {
 //            sb.append(c.toString() + '\n');
 //        }
 //        return sb.toString();
-          return "";
+        return null;
 
     }
 
-    
     private static int contador;
+
     //metodo cargar contactos
     public void leerContactos(String archivo) throws FileNotFoundException, IOException, ParseException, DatosException, archivoException {
         String rutaArchivo = archivo;
@@ -181,31 +173,23 @@ public class Agenda {
                 contador++;
 
                 if ("".equals(ex.getNombre())) {
-                    String error = "Introduza nombre para guardar contacto";
-                    errores.add("Error en fila=" + contador + " Linea= " + linea + " Error= " + error);
+                    errores.add("Error en fila=" + contador + " Linea= " + linea + " Error= Introduza nombre para guardar contacto");
                 }
                 if (ex.getExiste() == true) {
-                    String error = "Nombre introducido ya existe";
-                    errores.add("Error en fila=" + contador + " Linea= " + linea + " Error= " + error);
+                    errores.add("Error en fila=" + contador + " Linea= " + linea + " Error= Nombre introducido ya existe");
                 }
                 if (ex.isEmail() == true) {
-                    String error = "email introducido no valido";
-                    errores.add("Error en fila=" + contador + " Linea= " + linea + " Error= " + error);
+                    errores.add("Error en fila=" + contador + " Linea= " + linea + " Error= email introducido no valido");
                 }
             } catch (ParseException ex) {
                 contador++;
-                String error = "fecha de cumpleaños no valida dd/MM/yyyy";
-
-                errores.add("Error en fila=" + contador + " Linea= " + linea + " Error= " + error);
+                errores.add("Error en fila=" + contador + " Linea= " + linea + " Error= fecha de cumpleaños no valida dd/MM/yyyy");
             } catch (NumberFormatException ex) {
                 contador++;
-                String error = "Numero de telefono no valido";
-
-                errores.add("Error en fila=" + contador + " Linea= " + linea + " Error= " + error);
+                errores.add("Error en fila=" + contador + " Linea= " + linea + " Error= Numero de telefono no valido");
 
             } catch (Exception ex) {
                 contador++;
-
                 errores.add("Error en fila=" + contador + " Linea= " + linea + " Error= " + ex);
             }
 
@@ -214,73 +198,77 @@ public class Agenda {
         }
         contador = 0;
         if (errores != null) {
-
             archivoException exArchivo = new archivoException(errores);
             throw exArchivo;
-
         }
-
     }
 
-    //Metodo trabajando con ficheros no lo usamos trabajando con BBDD
-    public void guardarAgenda(String documentotxt) throws IOException {
-
-        File f = new File(documentotxt);
-        File bck = new File(documentotxt + "bck");
-        if (f.exists()) {
-
-            f.renameTo(bck);
-        }
-
-        try (FileOutputStream fos = new FileOutputStream(f); ObjectOutputStream oos = new ObjectOutputStream(fos)) {
-
-//            oos.writeObject(map);
-            bck.delete();
-
-        } catch (IOException e) {
-            bck.renameTo(f);
-            throw e;
-        }
-
-    }
-
-    //Metodo trabajando con ficheros, no lo usamos trabajando con BBDD
-    public void cargarAgenda(String documentotxt) throws FileNotFoundException, IOException, ClassNotFoundException {
-
-        try (FileInputStream fis = new FileInputStream(documentotxt); ObjectInputStream ois = new ObjectInputStream(fis);) {
+//    //Metodo trabajando con ficheros no lo usamos trabajando con BBDD
+//    public void guardarAgenda(String documentotxt) throws IOException {
+//
+//        File f = new File(documentotxt);
+//        File bck = new File(documentotxt + "bck");
+//        if (f.exists()) {
+//
+//            f.renameTo(bck);
+//        }
+//
+//        try (FileOutputStream fos = new FileOutputStream(f); ObjectOutputStream oos = new ObjectOutputStream(fos)) {
+//
+////            oos.writeObject(map);
+//            bck.delete();
+//
+//        } catch (IOException e) {
+//            bck.renameTo(f);
+//            throw e;
+//        }
+//
+//    }
+//
+//    //Metodo trabajando con ficheros, no lo usamos trabajando con BBDD
+//    public void cargarAgenda(String documentotxt) throws FileNotFoundException, IOException, ClassNotFoundException {
+//
+//        try (FileInputStream fis = new FileInputStream(documentotxt); ObjectInputStream ois = new ObjectInputStream(fis);) {
 //            map = (HashMap<String, Contactos>) ois.readObject();
-        }
-    }
-
+//        }
+//    }
+    
+    
     //metodo poner nombres en lista interfaz grafica
-    public ArrayList<String> getNombres() {
+    public ArrayList<String> getNombres() throws SQLexcep {
 
         ArrayList<String> al = null;
 
         try {
             al = cd.nombres();
+            Collections.sort(al);
         } catch (SQLException ex) {
-            //solo saltaria exception si tiene problemas al abrir o cerrar conexion con BBDD
-            System.out.println(ex.getMessage());;
+            SQLexcep SQLex = new SQLexcep(ex.getErrorCode());
+            throw SQLex;
         }
-
-        Collections.sort(al);
-
         return al;
     }
 
     //metodo para asignar datos cuando elijan contactos en la lista interfaz grafica
-    public Contactos cargarDatos(String nombre) throws SQLexcep {
+    public String[] cargarDatos(String nombre) throws SQLexcep {
+        SimpleDateFormat sdf = new SimpleDateFormat("dd/MM/yyyy");
         Contactos c = null;
+        String[] datos = new String[5];
+
         try {
-            c= cd.select(nombre);
+            c = cd.select(nombre);
+
+            datos[0] = c instanceof Contactos_Amigos ? "a" : "p";
+            datos[1] = c.getNombre();
+            datos[2] = c.getNumero() == null ? "" : c.getNumero() + "";
+            datos[3] = c.getCorreo();
+            datos[4] = c instanceof Contactos_Amigos ? (((Contactos_Amigos) c).getFechaCumpleanios() == null ? "" : sdf.format(((Contactos_Amigos) c).getFechaCumpleanios())) : ((Contactos_Profesionales) c).getNombreEmpresa();
+
         } catch (SQLException ex) {
-            //haria la select de nombres en la lista, no hay opcion de no clickar nombre que no exista
-            //daria exception si tiene problemas al abrir o cerrar conexion con BBDD
             SQLexcep SQLex = new SQLexcep(ex.getErrorCode());
-              throw SQLex;
+            throw SQLex;
         }
-        return c;
+        return datos;
     }
 
 }
